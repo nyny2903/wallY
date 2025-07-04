@@ -1,0 +1,151 @@
+//pinos de controle do motor A
+const int IN1 = 2;
+const int IN2 = 4;
+
+//pinos de controle do motor B
+const int IN3 = 7;
+const int IN4 = 8;
+
+//pmw
+const int EN1 = 9;
+const int EN2 = 10;
+
+//sensor
+const int ECHO = 12;
+const int TRIG = 13;
+
+//microservo
+#include <Servo.h> 
+Servo meuServo;
+
+void setup() {
+  //define todos os pinos como saída
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  pinMode(EN1, OUTPUT);
+  pinMode(EN2, OUTPUT);
+
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  meuServo.attach(11);
+  meuServo.write(90); 
+
+  Serial.begin(9600);
+}
+
+void loop() { 
+  int distancia = medirDistancia(90);
+
+  if (distancia > 20) {
+    andarFrente();
+  } else {
+    parar();
+    delay(300);
+
+    int esquerda = medirDistancia(30);
+    delay(300);
+    int direita = medirDistancia(150);
+    delay(300);
+
+    if (esquerda > 20 && direita > 20) {
+      // os dois lados estão livres: escolhe o melhor
+      if (esquerda > direita) {
+        virarEsquerda();
+      } else {
+        virarDireita();
+      }
+    } else if (esquerda > 20) {
+      virarEsquerda();
+    } else if (direita > 20) {
+      virarDireita();
+    } else {
+      andarTras();
+      delay(500);
+    }
+  }
+
+  delay(100);
+}
+  // funções
+int medirDistancia(int angulo) {
+  meuServo.write(angulo);
+  delay(900); //aqui p arrumar o giro do sensor
+
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  long duracao = pulseIn(ECHO, HIGH);
+  int distancia = duracao * 0.034 / 2;
+
+  Serial.print("Distância em ");
+  Serial.print(angulo);
+  Serial.print("°: ");
+  Serial.print(distancia);
+  Serial.println(" cm");
+
+  return distancia;
+}
+
+void andarFrente() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  analogWrite(EN1, 90);
+  analogWrite(EN2,90);
+}
+
+void andarTras() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(EN1, 90);
+  analogWrite(EN2, 90);
+}
+
+void andarDireita(){
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(EN1, 0);
+  analogWrite(EN2, 90);
+}
+
+void andarEsquerda(){
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  analogWrite(EN1, 90);
+  analogWrite(EN2, 0);
+}
+
+//função parar
+void parar() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+void virarEsquerda() {
+  andarEsquerda();  // gira para a esquerda com o motor
+  delay(700);       // ajusta esse valor conforme o giro real
+  parar();
+}
+
+void virarDireita() {
+  andarDireita();   // gira para a direita com o motor
+  delay(700);       // ajusta esse valor conforme o giro real
+  parar();
+}
